@@ -5,6 +5,7 @@ import { Star, Send, Repeat2, MessageSquare, TrendingUp } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import ConnectXCard from "@/components/dashboard/ConnectXCard";
+import SyncButton from "@/components/dashboard/SyncButton";
 
 export default function Dashboard() {
   const [userEmail, setUserEmail] = useState(null);
