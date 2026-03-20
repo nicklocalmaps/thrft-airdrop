@@ -5,7 +5,12 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-// Add page imports here
+import AppLayout from '@/components/layout/AppLayout';
+import Dashboard from '@/pages/Dashboard';
+import Leaderboard from '@/pages/Leaderboard';
+import ActivityPage from '@/pages/ActivityPage';
+import TrackedTags from '@/pages/TrackedTags';
+import SettingsPage from '@/pages/SettingsPage';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -33,7 +38,13 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/activity" element={<ActivityPage />} />
+        <Route path="/tags" element={<TrackedTags />} />
+        <Route path="/settings" element={<SettingsPage />} />
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
