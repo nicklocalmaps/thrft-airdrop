@@ -10,6 +10,7 @@ import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 
 export default function Dashboard() {
   const [userEmail, setUserEmail] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then((u) => setUserEmail(u.email));
