@@ -53,6 +53,15 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
+      {showOnboarding && userEmail && (
+        <OnboardingWizard
+          userEmail={userEmail}
+          onComplete={() => {
+            setShowOnboarding(false);
+            refetchProfiles();
+          }}
+        />
+      )}
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
