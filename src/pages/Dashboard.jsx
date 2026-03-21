@@ -6,6 +6,7 @@ import StatCard from "@/components/dashboard/StatCard";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import ConnectXCard from "@/components/dashboard/ConnectXCard";
 import SyncButton from "@/components/dashboard/SyncButton";
+import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 
 export default function Dashboard() {
   const [userEmail, setUserEmail] = useState(null);
