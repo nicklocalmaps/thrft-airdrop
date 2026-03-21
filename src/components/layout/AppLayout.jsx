@@ -23,7 +23,7 @@ export default function AppLayout() {
           >
             <Menu className="w-5 h-5" />
           </Button>
-          <h1 className="text-sm font-semibold text-foreground">XTracker</h1>
+          <h1 className="text-sm font-semibold text-foreground">THRFT Airdrop</h1>
         </header>
 
         <main className="p-6 lg:p-10 max-w-7xl mx-auto">
