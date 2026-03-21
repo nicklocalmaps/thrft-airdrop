@@ -21,6 +21,11 @@ export default function Dashboard() {
     queryFn: () => base44.entities.XProfile.filter({ user_email: userEmail }),
     enabled: !!userEmail,
     initialData: [],
+    onSuccess: (data) => {
+      if (data.length === 0 || !data[0]?.onboarding_complete) {
+        setShowOnboarding(true);
+      }
+    },
   });
 
   const profile = profiles?.[0] || null;
