@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Sidebar from "./Sidebar";
+import Sidebar from "./Sidebar.jsx";
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
