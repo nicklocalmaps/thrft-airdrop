@@ -21,14 +21,15 @@ export default function Dashboard() {
     queryFn: () => base44.entities.XProfile.filter({ user_email: userEmail }),
     enabled: !!userEmail,
     initialData: [],
-    onSuccess: (data) => {
-      if (data.length === 0 || !data[0]?.onboarding_complete) {
-        setShowOnboarding(true);
-      }
-    },
   });
 
   const profile = profiles?.[0] || null;
+
+  useEffect(() => {
+    if (profiles && (profiles.length === 0 || !profiles[0]?.onboarding_complete)) {
+      setShowOnboarding(true);
+    }
+  }, [profiles]);
 
   const { data: activities } = useQuery({
     queryKey: ["activities", userEmail],
