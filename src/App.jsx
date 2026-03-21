@@ -11,11 +11,14 @@ import Leaderboard from '@/pages/Leaderboard';
 import ActivityPage from '@/pages/ActivityPage';
 import TrackedTags from '@/pages/TrackedTags';
 import SettingsPage from '@/pages/SettingsPage';
+import CampaignPage from '@/pages/CampaignPage';
+import ProfilePage from '@/pages/ProfilePage';
+import AdminActivityPage from '@/pages/AdminActivityPage';
+import AnalyticsPage from '@/pages/AnalyticsPage';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
-  // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -24,35 +27,34 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
       navigateToLogin();
       return null;
     }
   }
 
-  // Render the main app
   return (
     <Routes>
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/activity" element={<ActivityPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/tags" element={<TrackedTags />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/campaigns" element={<CampaignPage />} />
+        <Route path="/admin/activity" element={<AdminActivityPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
 };
 
-
 function App() {
-
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
