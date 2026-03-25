@@ -63,11 +63,11 @@ export default function Sidebar({ isOpen, onToggle }) {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full p-4 gap-1">
-      <div className="flex items-center justify-between mb-6 px-2">
-        <span className="text-sm font-bold tracking-tight text-foreground">THRFT Airdrop</span>
+      <div className="flex items-center justify-between mb-4 px-2 lg:hidden">
+        <span className="text-sm font-bold tracking-tight text-foreground">Menu</span>
         <button
           onClick={onToggle}
-          className="lg:hidden text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground"
         >
           <X className="w-4 h-4" />
         </button>
