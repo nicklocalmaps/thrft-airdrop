@@ -17,6 +17,7 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
   const [step, setStep] = useState(1);
   const [handle, setHandle] = useState("");
   const [followers, setFollowers] = useState("");
+  const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
