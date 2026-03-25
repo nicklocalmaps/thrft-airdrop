@@ -79,15 +79,21 @@ export default function ConnectXCard({ profile, onConnected }) {
           </p>
         </div>
       </div>
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3">
         <Input
           placeholder="@yourhandle"
           value={handle}
           onChange={(e) => setHandle(e.target.value)}
           className="bg-secondary border-0"
-          onKeyDown={(e) => e.key === "Enter" && handleConnect()}
         />
-        <Button onClick={handleConnect} disabled={loading || !handle.trim()}>
+        <Input
+          type="email"
+          placeholder="Your email address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="bg-secondary border-0"
+        />
+        <Button onClick={handleConnect} disabled={loading || !handle.trim() || !email.trim()}>
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Connect"}
         </Button>
       </div>
