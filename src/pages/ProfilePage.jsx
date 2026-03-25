@@ -146,6 +146,11 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* App Download Bonus */}
+      {userEmail && profile && (
+        <AppDownloadClaim userEmail={userEmail} xHandle={profile.x_handle} />
+      )}
+
       {/* Activity History */}
       <ActivityHistoryList activities={activities} />
     </div>
