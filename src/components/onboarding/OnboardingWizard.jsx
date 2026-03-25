@@ -72,9 +72,8 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
     onComplete();
   };
 
-  const pointMap = {};
-  pointConfigs.forEach((c) => { pointMap[c.action_type] = c.points; });
-  const pts = { post: pointMap.post ?? 10, repost: pointMap.repost ?? 5, reply: pointMap.reply ?? 3 };
+  // Fixed base points per whitepaper
+  const pts = { post: 2, thread: 2, repost: 1.5, quote_repost: 2, reply: 1, bookmark: 1.5 };
 
   return (
     <div className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -166,9 +165,11 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
             </div>
             <div className="space-y-3">
               {[
-                { label: "Post with tracked tag", pts: pts.post },
-                { label: "Repost a tracked post", pts: pts.repost },
-                { label: "Reply to a tracked post", pts: pts.reply },
+                { label: "Post / Thread mentioning THRFT", pts: pts.post },
+                { label: "Quote Repost", pts: pts.quote_repost },
+                { label: "Repost", pts: pts.repost },
+                { label: "Reply", pts: pts.reply },
+                { label: "Bookmark", pts: pts.bookmark },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between rounded-xl bg-secondary p-3">
                   <span className="text-sm text-foreground">{item.label}</span>
