@@ -1,93 +1,103 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+
+function getAccountTier(followers) {
+  if (followers >= 250000) return 4;
+  if (followers >= 50000) return 3;
+  if (followers >= 10000) return 2;
+  return 1;
+}
+
+function getTierMultiplier(tier) {
+  const multipliers = { 1: 1.0, 2: 1.75, 3: 2.5, 4: 3.5 };
+  return multipliers[tier] || 1.0;
+}
+
+// Velocity multiplier: based on actions per hour in the last 7 days
+// Placeholder logic until X API provides real-time data
+function getVelocityMultiplier(recentActivities) {
+  // Approximate: count total actions in last 7 days
+  const totalActions = recentActivities.length;
+  const hours = 7 * 24;
+  const avgActionsPerHour = totalActions / hours;
+
+  if (avgActionsPerHour >= 50) return 2.0;
+  if (avgActionsPerHour >= 25) return 1.5;
+  if (avgActionsPerHour >= 10) return 1.2;
+  return 1.0;
+}
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-
-    // This runs as a scheduled job — use service role
     const profiles = await base44.asServiceRole.entities.XProfile.list();
-    const allActivities = await base44.asServiceRole.entities.Activity.list("-created_date", 5000);
+    const allActivities = await base44.asServiceRole.entities.Activity.list("-created_date", 10000);
 
     let emailsSent = 0;
+    const weekCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const now = new Date();
 
     for (const profile of profiles) {
-      // Recalculate total points from all activities
       const userActivities = allActivities.filter(a => a.user_email === profile.user_email);
-      
-      // Get point configs
-      const pointConfigs = await base44.asServiceRole.entities.PointConfig.list();
-      const pointMap = {};
-      pointConfigs.forEach(c => { pointMap[c.action_type] = c.points; });
-      const defaultPts = { post: 10, repost: 5, reply: 3 };
+      const recentActivities = userActivities.filter(a => new Date(a.activity_date || a.created_date) > weekCutoff);
 
-      let totalPoints = 0;
-      let postCount = 0, repostCount = 0, replyCount = 0;
+      const followers = profile.followers_count || 0;
+      const tier = getAccountTier(followers);
+      const tierMultiplier = getTierMultiplier(tier);
+      const velocityMultiplier = getVelocityMultiplier(recentActivities);
 
-      for (const activity of userActivities) {
-        const basePoints = pointMap[activity.action_type] ?? defaultPts[activity.action_type] ?? 0;
-        const multiplier = profile.multiplier || 1;
-        totalPoints += basePoints * multiplier;
-        if (activity.action_type === 'post') postCount++;
-        if (activity.action_type === 'repost') repostCount++;
-        if (activity.action_type === 'reply') replyCount++;
+      // Recount action types
+      const counts = { post: 0, repost: 0, quote_repost: 0, reply: 0, bookmark: 0, thread: 0 };
+      for (const a of userActivities) {
+        if (counts[a.action_type] !== undefined) counts[a.action_type]++;
       }
 
-      // Determine multiplier
-      let multiplier = 1;
-      const followers = profile.followers_count || 0;
-      if (followers >= 100000) multiplier = 4;
-      else if (followers >= 50000) multiplier = 3;
-      else if (followers >= 25000) multiplier = 2;
-
-      // High activity multiplier (2000+ actions in last 45 days)
-      const cutoff = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000);
-      const recentActions = userActivities.filter(a => new Date(a.activity_date || a.created_date) > cutoff).length;
-      if (recentActions >= 2000 && multiplier < 1.5) multiplier = 1.5;
+      // Total points = sum of stored points_earned on each activity
+      const totalPoints = userActivities.reduce((sum, a) => sum + (a.points_earned || 0), 0);
+      const weeklyPoints = recentActivities.reduce((sum, a) => sum + (a.points_earned || 0), 0);
 
       await base44.asServiceRole.entities.XProfile.update(profile.id, {
         total_points: Math.round(totalPoints),
-        post_count: postCount,
-        repost_count: repostCount,
-        reply_count: replyCount,
-        multiplier,
+        account_tier: tier,
+        multiplier: tierMultiplier,
+        velocity_multiplier: velocityMultiplier,
+        post_count: counts.post,
+        repost_count: counts.repost,
+        quote_repost_count: counts.quote_repost,
+        reply_count: counts.reply,
+        bookmark_count: counts.bookmark,
+        thread_count: counts.thread,
       });
 
-      // Send weekly email summary
-      if (profile.user_email && totalPoints > 0) {
-        const weeklyActivities = userActivities.filter(a => {
-          const d = new Date(a.activity_date || a.created_date);
-          return d > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        });
-
-        const weeklyPoints = weeklyActivities.reduce((sum, a) => {
-          return sum + ((pointMap[a.action_type] ?? defaultPts[a.action_type] ?? 0) * multiplier);
-        }, 0);
-
-        if (weeklyPoints > 0) {
-          await base44.asServiceRole.integrations.Core.SendEmail({
-            to: profile.user_email,
-            subject: `Your Weekly XTracker Summary 🏆`,
-            body: `
+      // Weekly email
+      if (profile.user_email && weeklyPoints > 0) {
+        const tierLabels = { 1: 'Tier 1', 2: 'Tier 2', 3: 'Tier 3 (KOL)', 4: 'Tier 4 (Top KOL)' };
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: profile.user_email,
+          subject: `Your Weekly THRFT Airdrop Summary 🏆`,
+          body: `
 Hi @${profile.x_handle},
 
 Here's your weekly engagement summary:
 
 📊 This Week:
-• Posts: ${weeklyActivities.filter(a => a.action_type === 'post').length}
-• Reposts: ${weeklyActivities.filter(a => a.action_type === 'repost').length}
-• Replies: ${weeklyActivities.filter(a => a.action_type === 'reply').length}
+• Posts: ${recentActivities.filter(a => a.action_type === 'post').length}
+• Threads: ${recentActivities.filter(a => a.action_type === 'thread').length}
+• Reposts: ${recentActivities.filter(a => a.action_type === 'repost').length}
+• Quote Reposts: ${recentActivities.filter(a => a.action_type === 'quote_repost').length}
+• Replies: ${recentActivities.filter(a => a.action_type === 'reply').length}
+• Bookmarks: ${recentActivities.filter(a => a.action_type === 'bookmark').length}
 • Points Earned This Week: +${Math.round(weeklyPoints)}
 
 🏅 Total Points: ${Math.round(totalPoints)}
-${multiplier > 1 ? `⚡ Your ${multiplier}x multiplier is active!` : ''}
+⚡ Account: ${tierLabels[tier]} (${tierMultiplier}x multiplier)
+${velocityMultiplier > 1 ? `🚀 Velocity Bonus: ${velocityMultiplier}x active!` : ''}
 
 Keep engaging to climb the leaderboard!
 
-— The XTracker Team
-            `.trim(),
-          });
-          emailsSent++;
-        }
+— The THRFT Team
+          `.trim(),
+        });
+        emailsSent++;
       }
     }
 
