@@ -60,10 +60,10 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
       });
     }
     // Send notification email to admin
-    await base44.integrations.Core.SendEmail({
-      to: "nick@localmaps.me",
-      subject: "New X Account Connected – THRFT Airdrop",
-      body: `A new user has connected their X account.\n\nX Handle: @${cleanHandle}\nEmail: ${email}\nApp User Email: ${userEmail}`,
+    await base44.functions.invoke("notifyNewConnection", {
+      x_handle: cleanHandle,
+      email,
+      app_user_email: userEmail,
     });
 
     setSaving(false);
