@@ -29,9 +29,9 @@ export default function TopBanner({ onMenuClick }) {
 
       {/* Presale badge + link */}
       <div className="ml-auto flex items-center gap-3">
-        <div className="hidden sm:flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-3 py-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          <span className="text-xs font-semibold text-primary">Presale Live</span>
+        <div className="hidden sm:flex items-center gap-2 bg-[#4181ED]/10 border border-[#4181ED]/20 rounded-full px-3 py-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#4181ED] animate-pulse" />
+          <span className="text-xs font-semibold text-[#4181ED]">Presale Live</span>
         </div>
         <a
           href="https://thrft.app"
