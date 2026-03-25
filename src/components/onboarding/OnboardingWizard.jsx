@@ -17,7 +17,7 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
   const [step, setStep] = useState(1);
   const [handle, setHandle] = useState("");
   const [followers, setFollowers] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(""); // stored in XProfile
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
@@ -44,6 +44,7 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
         is_connected: true,
         followers_count: followers ? parseInt(followers) : 0,
         onboarding_complete: false,
+        ...(email.trim() && { contact_email: email.trim() }),
       });
     } else {
       await base44.entities.XProfile.create({
@@ -52,6 +53,7 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
         x_display_name: cleanHandle,
         is_connected: true,
         followers_count: followers ? parseInt(followers) : 0,
+        ...(email.trim() && { contact_email: email.trim() }),
         total_points: 0,
         post_count: 0,
         repost_count: 0,

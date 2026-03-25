@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 export default function ConnectXCard({ profile, onConnected }) {
   const [handle, setHandle] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(""); // stored in XProfile
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -24,6 +24,7 @@ export default function ConnectXCard({ profile, onConnected }) {
       await base44.entities.XProfile.update(existing[0].id, {
         x_handle: cleanHandle,
         is_connected: true,
+        ...(email.trim() && { contact_email: email.trim() }),
       });
     } else {
       await base44.entities.XProfile.create({
@@ -35,6 +36,7 @@ export default function ConnectXCard({ profile, onConnected }) {
         post_count: 0,
         repost_count: 0,
         reply_count: 0,
+        ...(email.trim() && { contact_email: email.trim() }),
       });
     }
 
