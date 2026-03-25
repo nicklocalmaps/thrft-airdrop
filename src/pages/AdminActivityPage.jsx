@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2, Hash, AtSign } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,16 @@ export default function AdminActivityPage() {
     action_type: "post",
     tracked_tag: "",
     tweet_id: "",
+    conversation_id: "",
     tweet_text: "",
+    has_media: false,
+    has_presale_link: false,
+    impression_count: 0,
+    replies_received: 0,
+    reposts_received: 0,
+    bookmarks_received: 0,
+    replied_to_handle: "",
+    replied_to_followers: 0,
     activity_date: new Date().toISOString().slice(0, 16),
   });
 
