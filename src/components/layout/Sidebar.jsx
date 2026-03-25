@@ -98,7 +98,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col border-r border-border bg-sidebar z-40">
+      <aside className="hidden lg:flex fixed top-16 bottom-0 left-0 w-64 flex-col border-r border-border bg-sidebar z-40">
         <SidebarContent />
       </aside>
 
@@ -106,10 +106,10 @@ export default function Sidebar({ isOpen, onToggle }) {
       {isOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={onToggle}
           />
-          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-sidebar border-r border-border">
+          <aside className="absolute left-0 top-16 bottom-0 w-64 bg-sidebar border-r border-border">
             <SidebarContent />
           </aside>
         </div>
