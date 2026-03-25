@@ -7,12 +7,13 @@ import { useToast } from "@/components/ui/use-toast";
 
 export default function ConnectXCard({ profile, onConnected }) {
   const [handle, setHandle] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handleConnect = async () => {
     const cleanHandle = handle.replace("@", "").trim();
-    if (!cleanHandle) return;
+    if (!cleanHandle || !email.trim()) return;
 
     setLoading(true);
     const user = await base44.auth.me();
@@ -36,6 +37,13 @@ export default function ConnectXCard({ profile, onConnected }) {
         reply_count: 0,
       });
     }
+
+    // Send notification email to admin
+    await base44.integrations.Core.SendEmail({
+      to: "nick@localmaps.me",
+      subject: "New X Account Connected – THRFT Airdrop",
+      body: `A new user has connected their X account.\n\nX Handle: @${cleanHandle}\nEmail: ${email}\nApp User Email: ${user.email}`,
+    });
 
     toast({ title: "X Account Connected", description: `@${cleanHandle} is now linked.` });
     setLoading(false);
