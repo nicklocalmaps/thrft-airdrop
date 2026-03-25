@@ -135,6 +135,56 @@ export default function AdminActivityPage() {
             />
           </div>
           <div className="space-y-1.5">
+            <Label>Impression Count</Label>
+            <Input
+              type="number"
+              placeholder="0"
+              value={form.impression_count}
+              onChange={(e) => setForm((f) => ({ ...f, impression_count: parseInt(e.target.value) || 0 }))}
+              className="bg-secondary border-0"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Replies Received</Label>
+            <Input
+              type="number"
+              placeholder="0"
+              value={form.replies_received}
+              onChange={(e) => setForm((f) => ({ ...f, replies_received: parseInt(e.target.value) || 0 }))}
+              className="bg-secondary border-0"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Reposts Received</Label>
+            <Input
+              type="number"
+              placeholder="0"
+              value={form.reposts_received}
+              onChange={(e) => setForm((f) => ({ ...f, reposts_received: parseInt(e.target.value) || 0 }))}
+              className="bg-secondary border-0"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Bookmarks Received</Label>
+            <Input
+              type="number"
+              placeholder="0"
+              value={form.bookmarks_received}
+              onChange={(e) => setForm((f) => ({ ...f, bookmarks_received: parseInt(e.target.value) || 0 }))}
+              className="bg-secondary border-0"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Replied-To Account Followers</Label>
+            <Input
+              type="number"
+              placeholder="0 (for reply bonus)"
+              value={form.replied_to_followers}
+              onChange={(e) => setForm((f) => ({ ...f, replied_to_followers: parseInt(e.target.value) || 0 }))}
+              className="bg-secondary border-0"
+            />
+          </div>
+          <div className="space-y-1.5">
             <Label>Activity Date</Label>
             <Input
               type="datetime-local"
@@ -142,6 +192,26 @@ export default function AdminActivityPage() {
               onChange={(e) => setForm((f) => ({ ...f, activity_date: e.target.value }))}
               className="bg-secondary border-0"
             />
+          </div>
+          <div className="sm:col-span-2 flex gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.has_media}
+                onChange={(e) => setForm((f) => ({ ...f, has_media: e.target.checked }))}
+                className="rounded"
+              />
+              <span className="text-sm text-foreground">Has Media (+2 pts)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.has_presale_link}
+                onChange={(e) => setForm((f) => ({ ...f, has_presale_link: e.target.checked }))}
+                className="rounded"
+              />
+              <span className="text-sm text-foreground">Has Presale Link (+2 pts)</span>
+            </label>
           </div>
         </div>
         <Button onClick={handleSubmit} disabled={loading} className="w-full">
