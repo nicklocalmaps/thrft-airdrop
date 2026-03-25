@@ -176,11 +176,18 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
                 </div>
               ))}
               <div className="rounded-xl bg-primary/5 border border-primary/10 p-3 text-xs text-muted-foreground space-y-1">
-                <p className="font-semibold text-foreground">⚡ Bonus Multipliers</p>
-                <p>100k+ followers → 4x points</p>
-                <p>50k+ followers → 3x points</p>
-                <p>25k+ followers → 2x points</p>
-                <p>2000+ actions in 45 days → 1.5x points</p>
+                <p className="font-semibold text-foreground">⚡ Account Tier Multipliers</p>
+                <p>Tier 1 (&lt;10k followers) → 1x</p>
+                <p>Tier 2 (10k–50k followers) → 1.75x</p>
+                <p>Tier 3 (50k–250k followers) → 2.5x</p>
+                <p>Tier 4 (250k+ followers) → 3.5x</p>
+              </div>
+              <div className="rounded-xl bg-primary/5 border border-primary/10 p-3 text-xs text-muted-foreground space-y-1">
+                <p className="font-semibold text-foreground">🚀 Bonus Points</p>
+                <p>Include media → +2 pts</p>
+                <p>Include presale link → +2 pts</p>
+                <p>Thread → +3 bonus pts</p>
+                <p>1,000+ views → +5 pts | 10k+ → +30 pts</p>
               </div>
             </div>
             <Button className="w-full" onClick={handleFinish} disabled={saving}>
