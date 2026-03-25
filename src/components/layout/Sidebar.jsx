@@ -11,6 +11,7 @@ import {
   Megaphone,
   BarChart2,
   ClipboardList,
+  ShieldCheck,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,7 +27,7 @@ const adminNav = [
   { label: "Campaigns", path: "/campaigns", icon: Megaphone },
   { label: "Analytics", path: "/analytics", icon: BarChart2 },
   { label: "Manual Entry", path: "/admin/activity", icon: ClipboardList },
-  { label: "Download Claims", path: "/admin/claims", icon: ClipboardList },
+  { label: "Download Claims", path: "/admin/claims", icon: ShieldCheck },
   { label: "Tracked Tags", path: "/tags", icon: Tag },
   { label: "Settings", path: "/settings", icon: Settings },
 ];
