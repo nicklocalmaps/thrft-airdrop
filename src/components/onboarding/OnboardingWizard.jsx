@@ -59,6 +59,13 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
         onboarding_complete: false,
       });
     }
+    // Send notification email to admin
+    await base44.integrations.Core.SendEmail({
+      to: "nick@localmaps.me",
+      subject: "New X Account Connected – THRFT Airdrop",
+      body: `A new user has connected their X account.\n\nX Handle: @${cleanHandle}\nEmail: ${email}\nApp User Email: ${userEmail}`,
+    });
+
     setSaving(false);
     setStep(2);
   };
