@@ -1,0 +1,22 @@
+{
+  "name": "THRFT Airdrop Campaign",
+  "short_name": "THRFT Airdrop",
+  "description": "Earn points for promoting THRFT on X. Track your engagement and climb the leaderboard.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4181ED",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://media.base44.com/images/public/69bdbcef4144ce037aefb6a3/c55f97736_THRFTlogoroundedappiconphoto.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://media.base44.com/images/public/69bdbcef4144ce037aefb6a3/c55f97736_THRFTlogoroundedappiconphoto.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
