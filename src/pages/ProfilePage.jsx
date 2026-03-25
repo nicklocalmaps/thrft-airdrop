@@ -83,13 +83,13 @@ export default function ProfilePage() {
     setSaving(false);
   };
 
-  // Multiplier info
+  // Multiplier info — new 4-tier system
   const followers_count = profile?.followers_count || 0;
-  let multiplierLabel = "1x (Standard)";
+  let multiplierLabel = "1x — Tier 1 (<10k followers)";
   let multiplierColor = "text-muted-foreground";
-  if (followers_count >= 100000) { multiplierLabel = "4x (100k+ followers)"; multiplierColor = "text-yellow-500"; }
-  else if (followers_count >= 50000) { multiplierLabel = "3x (50k+ followers)"; multiplierColor = "text-orange-400"; }
-  else if (followers_count >= 25000) { multiplierLabel = "2x (25k+ followers)"; multiplierColor = "text-blue-400"; }
+  if (followers_count >= 250000) { multiplierLabel = "3.5x — Tier 4 (250k+ followers)"; multiplierColor = "text-yellow-500"; }
+  else if (followers_count >= 50000) { multiplierLabel = "2.5x — Tier 3 (50k–250k followers)"; multiplierColor = "text-orange-400"; }
+  else if (followers_count >= 10000) { multiplierLabel = "1.75x — Tier 2 (10k–50k followers)"; multiplierColor = "text-blue-400"; }
 
   return (
     <div className="space-y-8 max-w-3xl">
