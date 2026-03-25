@@ -228,11 +228,12 @@ export default function AdminActivityPage() {
           <div key={a.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">@{a.x_handle}</p>
-              <p className="text-xs text-muted-foreground">{a.action_type} · {a.tracked_tag}</p>
+              <p className="text-xs text-muted-foreground">{a.action_type.replace("_", " ")} · {a.tracked_tag}</p>
               {a.tweet_text && <p className="text-xs text-muted-foreground truncate mt-0.5">{a.tweet_text}</p>}
             </div>
             <div className="text-right shrink-0">
               <p className="text-sm font-bold text-primary">+{a.points_earned}</p>
+              {(a.bonus_points > 0) && <p className="text-[10px] text-chart-2">+{a.bonus_points} bonus</p>}
               <p className="text-[10px] text-muted-foreground">{moment(a.created_date).fromNow()}</p>
             </div>
           </div>
