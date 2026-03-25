@@ -56,8 +56,9 @@ export default function AdminActivityPage() {
       activity_date: new Date(form.activity_date).toISOString(),
     });
     if (res.data?.success) {
-      toast({ title: `Activity logged — ${res.data.points_earned} pts awarded` });
-      setForm((f) => ({ ...f, x_handle: "", tweet_id: "", tweet_text: "" }));
+      const { points_earned, base_points, bonus_points } = res.data;
+      toast({ title: `Activity logged — ${points_earned} pts`, description: `Base: ${base_points} + Bonus: ${bonus_points}` });
+      setForm((f) => ({ ...f, x_handle: "", tweet_id: "", tweet_text: "", impression_count: 0, replies_received: 0, reposts_received: 0, bookmarks_received: 0, has_media: false, has_presale_link: false }));
       queryClient.invalidateQueries({ queryKey: ["recentActivities"] });
       queryClient.invalidateQueries();
     } else {
