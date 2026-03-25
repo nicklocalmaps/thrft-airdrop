@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, Repeat2, MessageSquare, Star, TrendingUp, Trophy, Zap, Share2 } from "lucide-react";
+import { Send, Repeat2, MessageSquare, Star, TrendingUp, Trophy, Zap, Quote, Bookmark, AlignLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 import StatCard from "@/components/dashboard/StatCard";
 import ActivityHistoryList from "@/components/profile/ActivityHistoryList";
 import RankBadge from "@/components/profile/RankBadge";
+import AppDownloadClaim from "@/components/referral/AppDownloadClaim";
 
 export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState(null);

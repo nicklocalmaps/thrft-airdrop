@@ -15,6 +15,7 @@ import CampaignPage from '@/pages/CampaignPage';
 import ProfilePage from '@/pages/ProfilePage';
 import AdminActivityPage from '@/pages/AdminActivityPage';
 import AnalyticsPage from '@/pages/AnalyticsPage';
+import AdminClaimsPage from '@/pages/AdminClaimsPage';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();

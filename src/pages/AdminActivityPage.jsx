@@ -86,8 +86,11 @@ export default function AdminActivityPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="post">Post</SelectItem>
+                <SelectItem value="thread">Thread</SelectItem>
                 <SelectItem value="repost">Repost</SelectItem>
+                <SelectItem value="quote_repost">Quote Repost</SelectItem>
                 <SelectItem value="reply">Reply</SelectItem>
+                <SelectItem value="bookmark">Bookmark</SelectItem>
               </SelectContent>
             </Select>
           </div>
