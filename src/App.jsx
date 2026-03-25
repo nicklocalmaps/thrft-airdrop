@@ -49,6 +49,7 @@ const AuthenticatedApp = () => {
         <Route path="/campaigns" element={<CampaignPage />} />
         <Route path="/admin/activity" element={<AdminActivityPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/admin/claims" element={<AdminClaimsPage />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
