@@ -59,12 +59,7 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
         onboarding_complete: false,
       });
     }
-    // Send notification email to admin
-    await base44.functions.invoke("notifyNewConnection", {
-      x_handle: cleanHandle,
-      email,
-      app_user_email: userEmail,
-    });
+
 
     setSaving(false);
     setStep(2);

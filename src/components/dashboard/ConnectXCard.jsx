@@ -38,12 +38,7 @@ export default function ConnectXCard({ profile, onConnected }) {
       });
     }
 
-    // Send notification email to admin
-    await base44.functions.invoke("notifyNewConnection", {
-      x_handle: cleanHandle,
-      email,
-      app_user_email: user.email,
-    });
+
 
     toast({ title: "X Account Connected", description: `@${cleanHandle} is now linked.` });
     setLoading(false);
