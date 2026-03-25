@@ -122,6 +122,13 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
                 onKeyDown={(e) => e.key === "Enter" && handleConnectX()}
               />
               <Input
+                type="email"
+                placeholder="Your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-secondary border-0"
+              />
+              <Input
                 type="number"
                 placeholder="Followers count (for multiplier bonuses)"
                 value={followers}
