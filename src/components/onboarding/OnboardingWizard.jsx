@@ -151,11 +151,9 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
               <p className="text-sm text-muted-foreground mt-1">Use these tags in your posts to earn points</p>
             </div>
             <div className="flex flex-wrap gap-2 justify-center">
-              {tags.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No tags configured yet.</p>
-              ) : tags.map((tag) => (
-                <span key={tag.id} className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                  {tag.tag}
+              {["@THRFTapp", "#THRFT", "#THRFTapp", "#THRFTairdrop"].map((tag) => (
+                <span key={tag} className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                  {tag}
                 </span>
               ))}
             </div>
