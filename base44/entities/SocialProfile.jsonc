@@ -1,0 +1,76 @@
+{
+  "name": "SocialProfile",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "The email of the registered user"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "tiktok",
+        "youtube",
+        "discord",
+        "telegram"
+      ],
+      "description": "The social media platform"
+    },
+    "platform_handle": {
+      "type": "string",
+      "description": "The username/handle on the platform"
+    },
+    "platform_user_id": {
+      "type": "string",
+      "description": "The unique user ID on the platform (for API lookups)"
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Display name on the platform"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "Profile picture URL"
+    },
+    "followers_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Followers/subscribers/members count"
+    },
+    "account_tier": {
+      "type": "number",
+      "default": 1,
+      "description": "Account tier based on followers (same tier logic as X)"
+    },
+    "total_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Total accumulated points from this platform"
+    },
+    "multiplier": {
+      "type": "number",
+      "default": 1,
+      "description": "Current tier multiplier"
+    },
+    "is_connected": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this platform account is connected"
+    },
+    "post_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of tracked posts/videos/messages"
+    },
+    "engagement_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of tracked engagements (likes, comments, shares, etc.)"
+    }
+  },
+  "required": [
+    "user_email",
+    "platform",
+    "platform_handle"
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "name": "SocialActivity",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "The email of the registered user"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "tiktok",
+        "youtube",
+        "discord",
+        "telegram"
+      ],
+      "description": "The social media platform"
+    },
+    "platform_handle": {
+      "type": "string",
+      "description": "The username/handle on the platform"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "post",
+        "video",
+        "comment",
+        "like",
+        "share",
+        "follow",
+        "message",
+        "join",
+        "invite",
+        "reaction"
+      ],
+      "description": "Type of engagement action"
+    },
+    "tracked_tag": {
+      "type": "string",
+      "description": "The hashtag or mention this activity relates to"
+    },
+    "content_id": {
+      "type": "string",
+      "description": "The platform-specific post/video/message ID"
+    },
+    "content_text": {
+      "type": "string",
+      "description": "Text content of the post/message"
+    },
+    "has_media": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the post includes an image or video"
+    },
+    "has_presale_link": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the post includes the presale link"
+    },
+    "view_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of views/impressions"
+    },
+    "likes_received": {
+      "type": "number",
+      "default": 0,
+      "description": "Likes received on this content"
+    },
+    "comments_received": {
+      "type": "number",
+      "default": 0,
+      "description": "Comments received on this content"
+    },
+    "shares_received": {
+      "type": "number",
+      "default": 0,
+      "description": "Shares/reposts received on this content"
+    },
+    "base_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Base points before multiplier"
+    },
+    "bonus_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Bonus points"
+    },
+    "points_earned": {
+      "type": "number",
+      "default": 0,
+      "description": "Total points earned including bonuses and multiplier"
+    },
+    "activity_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the activity occurred"
+    }
+  },
+  "required": [
+    "user_email",
+    "platform",
+    "platform_handle",
+    "action_type",
+    "points_earned"
+  ]
+}
