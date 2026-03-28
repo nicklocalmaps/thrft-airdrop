@@ -14,14 +14,6 @@ function getAccountTier(followers) {
 function getTierMultiplier(tier) {
   return { 1: 1.0, 2: 1.75, 3: 2.5, 4: 3.5 }[tier] || 1.0;
 }
-function getImpressionBonus(impressions) {
-  if (impressions >= 1000000) return 1000;
-  if (impressions >= 100000) return 250;
-  if (impressions >= 50000) return 100;
-  if (impressions >= 10000) return 25;
-  if (impressions >= 1000) return 5;
-  return 0;
-}
 function getTikTokViewBonus(views) {
   if (views >= 1000000) return 2000;
   if (views >= 100000) return 500;
@@ -30,7 +22,14 @@ function getTikTokViewBonus(views) {
   if (views >= 1000) return 10;
   return 0;
 }
-
+function getImpressionBonus(impressions) {
+  if (impressions >= 1000000) return 1000;
+  if (impressions >= 100000) return 250;
+  if (impressions >= 50000) return 100;
+  if (impressions >= 10000) return 25;
+  if (impressions >= 1000) return 5;
+  return 0;
+}
 function calculateTikTokPoints({ hasMention, hasPresaleLink, viewCount, likeCount, commentCount, shareCount, tierMultiplier }) {
   let base = 8;
   let bonus = 0;
@@ -41,42 +40,39 @@ function calculateTikTokPoints({ hasMention, hasPresaleLink, viewCount, likeCoun
   bonus += (shareCount || 0) * 3;
   bonus += getTikTokViewBonus(viewCount || 0);
   bonus += getImpressionBonus(viewCount || 0);
-  const total = (base + bonus) * tierMultiplier * 2.0; // 2.0x short-form video multiplier
+  const total = (base + bonus) * tierMultiplier * 2.0;
   return { base, bonus, total: Math.round(total * 100) / 100 };
 }
 
-async function getTikTokAccessToken() {
+async function refreshAccessToken(profile) {
+  if (!profile.refresh_token) return null;
   const res = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       client_key: TIKTOK_CLIENT_KEY,
       client_secret: TIKTOK_CLIENT_SECRET,
-      grant_type: "client_credentials",
+      grant_type: "refresh_token",
+      refresh_token: profile.refresh_token,
     }),
   });
-  if (!res.ok) throw new Error(`TikTok auth error: ${await res.text()}`);
-  const data = await res.json();
-  return data.access_token;
+  if (!res.ok) return null;
+  return res.json();
 }
 
-async function searchTikTokVideos(accessToken, hashtag) {
-  const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const endDate = new Date();
-  const fmt = d => d.toISOString().split("T")[0].replace(/-/g, "");
-
-  const res = await fetch("https://open.tiktokapis.com/v2/research/video/query/", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      query: { and: [{ operation: "IN", field_name: "hashtag_name", field_values: [hashtag] }] },
-      start_date: fmt(startDate),
-      end_date: fmt(endDate),
-      max_count: 100,
-      fields: "id,create_time,username,video_description,like_count,comment_count,share_count,view_count",
-    }),
-  });
-  if (!res.ok) throw new Error(`TikTok search error: ${await res.text()}`);
+async function fetchUserVideos(accessToken) {
+  const res = await fetch(
+    "https://open.tiktokapis.com/v2/video/list/?fields=id,create_time,title,video_description,like_count,comment_count,share_count,view_count,cover_image_url",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ max_count: 20 }),
+    }
+  );
+  if (!res.ok) throw new Error(`video/list error (${res.status}): ${await res.text()}`);
   return res.json();
 }
 
@@ -87,21 +83,11 @@ Deno.serve(async (req) => {
     if (user?.role !== 'admin') {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
-    if (!TIKTOK_CLIENT_KEY || !TIKTOK_CLIENT_SECRET) {
-      return Response.json({ error: 'TIKTOK_CLIENT_KEY and TIKTOK_CLIENT_SECRET secrets required. TikTok Research API requires application approval at developers.tiktok.com' }, { status: 400 });
-    }
 
-    let accessToken;
-    try {
-      accessToken = await getTikTokAccessToken();
-    } catch (e) {
-      return Response.json({ error: `TikTok auth failed: ${e.message}` }, { status: 401 });
-    }
-
-    const socialProfiles = await base44.asServiceRole.entities.SocialProfile.filter({ platform: "tiktok" });
-    const profilesByHandle = {};
-    socialProfiles.forEach(p => {
-      if (p.platform_handle) profilesByHandle[p.platform_handle.toLowerCase().replace("@", "")] = p;
+    // Get all connected TikTok profiles with tokens
+    const profiles = await base44.asServiceRole.entities.SocialProfile.filter({
+      platform: "tiktok",
+      is_connected: true,
     });
 
     const existingActivities = await base44.asServiceRole.entities.SocialActivity.filter({ platform: "tiktok" });
@@ -110,26 +96,49 @@ Deno.serve(async (req) => {
     let totalCreated = 0;
     const profileUpdates = {};
 
-    for (const hashtag of TRACKED_HASHTAGS) {
-      const searchData = await searchTikTokVideos(accessToken, hashtag).catch(e => {
-        console.error(`TikTok search error for ${hashtag}:`, e.message);
+    for (const profile of profiles) {
+      if (!profile.access_token) continue;
+
+      let accessToken = profile.access_token;
+
+      // Refresh token if expired or expiring soon
+      const expiresAt = profile.token_expires_at ? new Date(profile.token_expires_at) : null;
+      const needsRefresh = !expiresAt || expiresAt < new Date(Date.now() + 5 * 60 * 1000);
+
+      if (needsRefresh && profile.refresh_token) {
+        const tokenData = await refreshAccessToken(profile).catch(() => null);
+        if (tokenData?.access_token) {
+          accessToken = tokenData.access_token;
+          const newExpiry = new Date(Date.now() + (tokenData.expires_in || 86400) * 1000).toISOString();
+          await base44.asServiceRole.entities.SocialProfile.update(profile.id, {
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token || profile.refresh_token,
+            token_expires_at: newExpiry,
+          });
+        } else {
+          console.warn(`Skipping ${profile.platform_handle} — token refresh failed`);
+          continue;
+        }
+      }
+
+      // Fetch this user's videos
+      const videoData = await fetchUserVideos(accessToken).catch(e => {
+        console.error(`video/list error for ${profile.platform_handle}:`, e.message);
         return null;
       });
 
-      for (const video of (searchData?.data?.videos || [])) {
+      if (!videoData?.data?.videos) continue;
+
+      for (const video of videoData.data.videos) {
         const videoId = String(video.id);
         if (existingIds.has(videoId)) continue;
 
-        const username = video.username?.toLowerCase();
-        if (!username) continue;
+        const description = (video.title || video.video_description || "").toLowerCase();
+        const hasMention = TRACKED_HASHTAGS.some(t => description.includes(t));
+        const hasPresaleLink = PRESALE_KEYWORDS.some(k => description.includes(k));
 
-        const profile = profilesByHandle[username];
-        if (!profile) continue;
-
-        const description = video.video_description || "";
-        const lowerDesc = description.toLowerCase();
-        const hasMention = TRACKED_HASHTAGS.some(t => lowerDesc.includes(t));
-        const hasPresaleLink = PRESALE_KEYWORDS.some(k => lowerDesc.includes(k));
+        // Only track videos that mention THRFT
+        if (!hasMention && !hasPresaleLink) continue;
 
         const viewCount = video.view_count || 0;
         const likeCount = video.like_count || 0;
@@ -138,16 +147,20 @@ Deno.serve(async (req) => {
 
         const tier = getAccountTier(profile.followers_count || 0);
         const tierMultiplier = getTierMultiplier(tier);
-        const { base, bonus, total } = calculateTikTokPoints({ hasMention, hasPresaleLink, viewCount, likeCount, commentCount, shareCount, tierMultiplier });
+        const { base, bonus, total } = calculateTikTokPoints({
+          hasMention, hasPresaleLink, viewCount, likeCount, commentCount, shareCount, tierMultiplier
+        });
+
+        const trackedTag = TRACKED_HASHTAGS.find(t => description.includes(t)) || "thrft";
 
         await base44.asServiceRole.entities.SocialActivity.create({
           user_email: profile.user_email,
           platform: "tiktok",
           platform_handle: profile.platform_handle,
           action_type: "video",
-          tracked_tag: `#${hashtag}`,
+          tracked_tag: `#${trackedTag}`,
           content_id: videoId,
-          content_text: description.substring(0, 500),
+          content_text: (video.title || video.video_description || "").substring(0, 500),
           has_media: true,
           has_presale_link: hasPresaleLink,
           view_count: viewCount,
@@ -179,7 +192,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    return Response.json({ success: true, activities_created: totalCreated, profiles_updated: Object.keys(profileUpdates).length });
+    return Response.json({
+      success: true,
+      activities_created: totalCreated,
+      profiles_synced: profiles.length,
+      profiles_updated: Object.keys(profileUpdates).length,
+    });
   } catch (error) {
     console.error("TikTok sync error:", error.message);
     return Response.json({ error: error.message }, { status: 500 });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, Repeat2, MessageSquare, Star, TrendingUp, Trophy, Zap, Quote, Bookmark, AlignLeft } from "lucide-react";
+import { Send, Repeat2, Star, Trophy, Zap, CheckCircle2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,8 +45,19 @@ export default function ProfilePage() {
     initialData: [],
   });
 
+  const { data: socialProfiles } = useQuery({
+    queryKey: ["socialProfiles", userEmail],
+    queryFn: () => base44.entities.SocialProfile.filter({ user_email: userEmail, platform: "tiktok" }),
+    enabled: !!userEmail,
+    initialData: [],
+  });
+
   const profile = profiles?.[0] || null;
+  const tiktokProfile = socialProfiles?.[0] || null;
   const rank = allProfiles.findIndex((p) => p.user_email === userEmail) + 1;
+
+  const TIKTOK_CLIENT_KEY = "sbaw77fjof9g3aqc"; // your TikTok client key
+  const tiktokAuthUrl = `https://www.tiktok.com/v2/auth/authorize?client_key=${TIKTOK_CLIENT_KEY}&response_type=code&scope=user.info.stats,user.info.profile,video.list&redirect_uri=https://airdrop.thrft.app/tiktok-callback&state=tiktok_connect`;
 
   useEffect(() => {
     if (profile) {
@@ -145,6 +156,31 @@ export default function ProfilePage() {
           <StatCard label="Reposts" value={profile.repost_count || 0} icon={Repeat2} />
         </div>
       )}
+
+      {/* TikTok Connection */}
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-3">
+        <h3 className="text-sm font-semibold text-foreground">TikTok Account</h3>
+        {tiktokProfile?.is_connected ? (
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-green-50 p-3">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Connected</p>
+              <p className="text-xs text-muted-foreground">@{tiktokProfile.platform_handle}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">Connect your TikTok to earn points for your THRFT videos.</p>
+            <Button asChild>
+              <a href={tiktokAuthUrl}>
+                <ExternalLink className="w-4 h-4 mr-1" /> Connect TikTok
+              </a>
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* App Download Bonus */}
       {userEmail && profile && (

@@ -18,6 +18,7 @@ import AnalyticsPage from '@/pages/AnalyticsPage';
 import AdminClaimsPage from '@/pages/AdminClaimsPage';
 import TermsOfService from '@/pages/TermsOfService';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import TikTokCallback from '@/pages/TikTokCallback';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -55,6 +56,7 @@ const AuthenticatedApp = () => {
       </Route>
       <Route path="/terms" element={<TermsOfService />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/tiktok-callback" element={<TikTokCallback />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

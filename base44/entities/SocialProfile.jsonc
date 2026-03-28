@@ -66,6 +66,19 @@
       "type": "number",
       "default": 0,
       "description": "Number of tracked engagements (likes, comments, shares, etc.)"
+    },
+    "access_token": {
+      "type": "string",
+      "description": "OAuth access token for this platform (TikTok)"
+    },
+    "refresh_token": {
+      "type": "string",
+      "description": "OAuth refresh token for this platform (TikTok)"
+    },
+    "token_expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the access token expires"
     }
   },
   "required": [
