@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 const BEARER_TOKEN = Deno.env.get("X_BEARER_TOKEN");
 
@@ -78,18 +78,8 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Get point configs
-    const pointConfigs = await base44.asServiceRole.entities.PointConfig.list();
-    const pointMap = {};
-    pointConfigs.forEach((c) => {
-      pointMap[c.action_type] = c.points;
-    });
-    const defaultPoints = { post: 10, repost: 5, reply: 3 };
-    const points = {
-      post: pointMap["post"] ?? defaultPoints.post,
-      repost: pointMap["repost"] ?? defaultPoints.repost,
-      reply: pointMap["reply"] ?? defaultPoints.reply,
-    };
+    // Point values per spec
+    const basePointMap = { post: 2, thread: 2, repost: 1.5, quote_repost: 2, reply: 1, bookmark: 1.5 };
 
     // Get active tracked tags
     const tags = await base44.asServiceRole.entities.TrackedTag.filter({ is_active: true });
@@ -152,7 +142,13 @@ Deno.serve(async (req) => {
           const profile = profilesByHandle[handle];
           if (!profile) continue;
 
-          const earnedPoints = points[action_type] || 0;
+          // Calculate points with full spec
+          const followers = profile?.followers_count || 0;
+          const tier = followers >= 250000 ? 4 : followers >= 50000 ? 3 : followers >= 10000 ? 2 : 1;
+          const tierMultiplier = { 1: 1.0, 2: 1.75, 3: 2.5, 4: 3.5 }[tier] || 1.0;
+          const velocityMultiplier = profile?.velocity_multiplier || 1;
+          const base = basePointMap[action_type] || 0;
+          const earnedPoints = Math.round(base * tierMultiplier * velocityMultiplier * 100) / 100;
 
           // Create activity record
           await base44.asServiceRole.entities.Activity.create({
@@ -162,6 +158,8 @@ Deno.serve(async (req) => {
             tracked_tag: tag,
             tweet_id: tweet.id,
             tweet_text: tweet.text,
+            base_points: base,
+            bonus_points: 0,
             points_earned: earnedPoints,
             activity_date: tweet.created_at,
           });
