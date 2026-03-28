@@ -16,6 +16,8 @@ import ProfilePage from '@/pages/ProfilePage';
 import AdminActivityPage from '@/pages/AdminActivityPage';
 import AnalyticsPage from '@/pages/AnalyticsPage';
 import AdminClaimsPage from '@/pages/AdminClaimsPage';
+import TermsOfService from '@/pages/TermsOfService';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -51,6 +53,8 @@ const AuthenticatedApp = () => {
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/admin/claims" element={<AdminClaimsPage />} />
       </Route>
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
