@@ -56,7 +56,7 @@ export default function ProfilePage() {
   const tiktokProfile = socialProfiles?.[0] || null;
   const rank = allProfiles.findIndex((p) => p.user_email === userEmail) + 1;
 
-  const TIKTOK_CLIENT_KEY = "sbaw77fjof9g3aqc"; // your TikTok client key
+  const TIKTOK_CLIENT_KEY = "awc5powx6hty41eq";
   const tiktokAuthUrl = `https://www.tiktok.com/v2/auth/authorize?client_key=${TIKTOK_CLIENT_KEY}&response_type=code&scope=user.info.stats,user.info.profile,video.list&redirect_uri=https://airdrop.thrft.app/tiktok-callback&state=tiktok_connect`;
 
   useEffect(() => {
