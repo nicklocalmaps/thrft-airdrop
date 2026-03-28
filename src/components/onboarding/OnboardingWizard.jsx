@@ -2,22 +2,30 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, ChevronRight, Hash, Star, User, Loader2 } from "lucide-react";
+import { CheckCircle2, ChevronRight, Hash, Star, Users, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
-  { id: 1, title: "Connect Your X Account", icon: User },
+  { id: 1, title: "Connect Your Social Accounts", icon: Users },
   { id: 2, title: "Tracked Hashtags", icon: Hash },
   { id: 3, title: "How Points Work", icon: Star },
+];
+
+const PLATFORMS = [
+  { key: "tiktok", label: "TikTok", placeholder: "@yourusername", prefix: "@" },
+  { key: "youtube", label: "YouTube", placeholder: "@yourchannel", prefix: "@" },
+  { key: "discord", label: "Discord", placeholder: "username#0000", prefix: "" },
+  { key: "telegram", label: "Telegram", placeholder: "@yourusername", prefix: "@" },
 ];
 
 export default function OnboardingWizard({ userEmail, onComplete }) {
   const [step, setStep] = useState(1);
   const [handle, setHandle] = useState("");
   const [followers, setFollowers] = useState("");
-  const [email, setEmail] = useState(""); // stored in XProfile
+  const [email, setEmail] = useState("");
+  const [socialHandles, setSocialHandles] = useState({ tiktok: "", youtube: "", discord: "", telegram: "" });
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
@@ -62,6 +70,28 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
       });
     }
 
+    // Save any social profiles that were filled in
+    for (const platform of PLATFORMS) {
+      const ph = socialHandles[platform.key].replace("@", "").trim();
+      if (!ph) continue;
+      const existingSocial = await base44.entities.SocialProfile.filter({ user_email: userEmail, platform: platform.key });
+      if (existingSocial.length > 0) {
+        await base44.entities.SocialProfile.update(existingSocial[0].id, {
+          platform_handle: ph,
+          display_name: ph,
+          is_connected: true,
+        });
+      } else {
+        await base44.entities.SocialProfile.create({
+          user_email: userEmail,
+          platform: platform.key,
+          platform_handle: ph,
+          display_name: ph,
+          is_connected: true,
+          total_points: 0,
+        });
+      }
+    }
 
     setSaving(false);
     setStep(2);
@@ -100,38 +130,68 @@ export default function OnboardingWizard({ userEmail, onComplete }) {
           ))}
         </div>
 
-        {/* Step 1: Connect X */}
+        {/* Step 1: Connect Social Accounts */}
         {step === 1 && (
           <div className="space-y-6">
             <div className="text-center">
               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                <User className="w-6 h-6 text-primary" />
+                <Users className="w-6 h-6 text-primary" />
               </div>
-              <h2 className="text-lg font-bold text-foreground">Connect Your X Account</h2>
-              <p className="text-sm text-muted-foreground mt-1">Enter your X handle to start earning points</p>
+              <h2 className="text-lg font-bold text-foreground">Connect Your Social Accounts</h2>
+              <p className="text-sm text-muted-foreground mt-1">Add your handles to start earning points across all platforms</p>
             </div>
             <div className="space-y-3">
-              <Input
-                placeholder="@yourhandle"
-                value={handle}
-                onChange={(e) => setHandle(e.target.value)}
-                className="bg-secondary border-0"
-                onKeyDown={(e) => e.key === "Enter" && handleConnectX()}
-              />
-              <Input
-                type="email"
-                placeholder="Your email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-secondary border-0"
-              />
-              <Input
-                type="number"
-                placeholder="Followers count (for multiplier bonuses)"
-                value={followers}
-                onChange={(e) => setFollowers(e.target.value)}
-                className="bg-secondary border-0"
-              />
+              {/* X (required) */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">X / Twitter <span className="text-destructive">*</span></p>
+                <Input
+                  placeholder="@yourhandle"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                  className="bg-secondary border-0"
+                  onKeyDown={(e) => e.key === "Enter" && handleConnectX()}
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Email <span className="text-destructive">*</span></p>
+                <Input
+                  type="email"
+                  placeholder="Your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-secondary border-0"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">X Followers Count</p>
+                <Input
+                  type="number"
+                  placeholder="Followers count (for multiplier bonuses)"
+                  value={followers}
+                  onChange={(e) => setFollowers(e.target.value)}
+                  className="bg-secondary border-0"
+                />
+              </div>
+
+              {/* Divider */}
+              <div className="flex items-center gap-2 py-1">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-muted-foreground">Other platforms (optional)</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+
+              {/* Other platforms */}
+              {PLATFORMS.map((p) => (
+                <div key={p.key}>
+                  <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">{p.label}</p>
+                  <Input
+                    placeholder={p.placeholder}
+                    value={socialHandles[p.key]}
+                    onChange={(e) => setSocialHandles((prev) => ({ ...prev, [p.key]: e.target.value }))}
+                    className="bg-secondary border-0"
+                  />
+                </div>
+              ))}
             </div>
             <Button className="w-full" onClick={handleConnectX} disabled={saving || !handle.trim()}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
