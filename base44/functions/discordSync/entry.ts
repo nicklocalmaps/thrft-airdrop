@@ -1,9 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 const DISCORD_BOT_TOKEN = Deno.env.get("DISCORD_BOT_TOKEN");
-const CHANNEL_IDS = (Deno.env.get("DISCORD_CHANNEL_IDS") || "").split(',').map(s => s.trim()).filter(Boolean);
-const TRACKED_TAGS = ["THRFT", "THRFTapp", "THRFTairdrop", "thrft.app"];
-const PRESALE_KEYWORDS = ["presale", "thrft.app"];
+const DISCORD_SERVER_ID = Deno.env.get("DISCORD_SERVER_ID");
+const DISCORD_CHANNEL_IDS_RAW = Deno.env.get("DISCORD_CHANNEL_IDS") || "";
+const TRACKED_TAGS = ["thrft", "thrftapp", "thrftairdrop", "@thrftapp"];
+const PRESALE_KEYWORDS = ["presale", "thrft.app", "thrft.io"];
 
 function getAccountTier(followers) {
   if (followers >= 250000) return 4;
@@ -15,26 +16,27 @@ function getTierMultiplier(tier) {
   return { 1: 1.0, 2: 1.75, 3: 2.5, 4: 3.5 }[tier] || 1.0;
 }
 
-function calculateDiscordPoints({ action_type, has_media, reactions_received, replies_received, tier_multiplier }) {
-  let base = 0, bonus = 0;
-
-  if (action_type === 'message') base = has_media ? 2 : 1;
-  else if (action_type === 'thread') base = 3;
-  else if (action_type === 'invite') base = 5;
-  else if (action_type === 'active_invite') base = 10;
-
-  bonus += (reactions_received || 0) * 0.5;
-  bonus += (replies_received || 0) * 1;
-
-  const total = (base + bonus) * (tier_multiplier || 1);
+function calculateDiscordPoints({ hasMedia, isThread, reactionsReceived, repliesReceived, tierMultiplier }) {
+  let base = isThread ? 3 : hasMedia ? 2 : 1;
+  let bonus = 0;
+  bonus += (reactionsReceived || 0) * 0.5;
+  bonus += (repliesReceived || 0) * 1;
+  if (isThread && (repliesReceived || 0) >= 25) bonus += 25;
+  const mediaMultiplier = (hasMedia && !isThread) ? 1.5 : 1.0;
+  const total = (base + bonus) * tierMultiplier * mediaMultiplier;
   return { base, bonus, total: Math.round(total * 100) / 100 };
 }
 
-async function discordApi(path) {
-  const res = await fetch(`https://discord.com/api/v10${path}`, {
-    headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
+async function discordFetch(endpoint) {
+  const res = await fetch(`https://discord.com/api/v10${endpoint}`, {
+    headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}`, "Content-Type": "application/json" },
   });
-  if (!res.ok) throw new Error(`Discord API error (${path}): ${res.status} ${await res.text()}`);
+  if (res.status === 429) {
+    const data = await res.json();
+    await new Promise(r => setTimeout(r, (data.retry_after || 1) * 1000));
+    return discordFetch(endpoint);
+  }
+  if (!res.ok) throw new Error(`Discord API error (${res.status}): ${await res.text()}`);
   return res.json();
 }
 
@@ -42,98 +44,104 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (user?.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
-
-    if (!DISCORD_BOT_TOKEN || CHANNEL_IDS.length === 0) {
-      return Response.json({ error: 'DISCORD_BOT_TOKEN and DISCORD_CHANNEL_IDS secrets are required.' }, { status: 400 });
+    if (user?.role !== 'admin') {
+      return Response.json({ error: 'Admin access required' }, { status: 403 });
+    }
+    if (!DISCORD_BOT_TOKEN || !DISCORD_SERVER_ID) {
+      return Response.json({ error: 'DISCORD_BOT_TOKEN and DISCORD_SERVER_ID secrets required' }, { status: 400 });
     }
 
-    // Load registered Discord profiles
-    const socialProfiles = await base44.asServiceRole.entities.SocialProfile.filter({ platform: 'discord' });
-    if (socialProfiles.length === 0) return Response.json({ message: 'No Discord profiles registered.' });
+    const channelIds = DISCORD_CHANNEL_IDS_RAW.split(",").map(s => s.trim()).filter(Boolean);
+    if (channelIds.length === 0) {
+      return Response.json({ error: 'DISCORD_CHANNEL_IDS secret required' }, { status: 400 });
+    }
 
+    const socialProfiles = await base44.asServiceRole.entities.SocialProfile.filter({ platform: "discord" });
     const profilesByHandle = {};
     socialProfiles.forEach(p => {
-      const key = p.platform_handle?.toLowerCase();
-      if (key) profilesByHandle[key] = p;
+      if (p.platform_handle) {
+        profilesByHandle[p.platform_handle.toLowerCase()] = p;
+        profilesByHandle[p.platform_handle.split("#")[0].toLowerCase()] = p;
+      }
+      if (p.platform_user_id) profilesByHandle[p.platform_user_id] = p;
     });
 
-    const existing = await base44.asServiceRole.entities.SocialActivity.filter({ platform: 'discord' });
-    const existingIds = new Set(existing.map(a => a.content_id).filter(Boolean));
+    const existingActivities = await base44.asServiceRole.entities.SocialActivity.filter({ platform: "discord" });
+    const existingIds = new Set(existingActivities.map(a => a.content_id).filter(Boolean));
 
     let totalCreated = 0;
+    const profileUpdates = {};
 
-    for (const channelId of CHANNEL_IDS) {
-      const messages = await discordApi(`/channels/${channelId}/messages?limit=100`).catch(e => {
-        console.error(`Channel ${channelId}:`, e.message);
+    for (const channelId of channelIds) {
+      const messages = await discordFetch(`/channels/${channelId}/messages?limit=100`).catch(e => {
+        console.error(`Discord channel ${channelId} error:`, e.message);
         return [];
       });
 
-      for (const msg of messages) {
-        if (existingIds.has(msg.id)) continue;
+      for (const message of messages) {
+        if (existingIds.has(message.id)) continue;
+        if (message.author?.bot) continue;
 
-        const text = msg.content || '';
-        const hasThrftTag = TRACKED_TAGS.some(t => text.toLowerCase().includes(t.toLowerCase()));
-        if (!hasThrftTag) continue;
+        const text = message.content || "";
+        const lowerText = text.toLowerCase();
+        if (!TRACKED_TAGS.some(t => lowerText.includes(t))) continue;
 
-        // Match by username#discriminator or just username
-        const discordUsername = msg.author?.username?.toLowerCase();
-        const discordTag = `${discordUsername}#${msg.author?.discriminator}`.toLowerCase();
-        const profile = profilesByHandle[discordTag] || profilesByHandle[discordUsername];
+        const username = message.author?.username?.toLowerCase();
+        const userId = message.author?.id;
+        if (!username) continue;
+
+        const profile = profilesByHandle[username] || profilesByHandle[userId];
         if (!profile) continue;
 
-        const has_media = !!(msg.attachments?.length || msg.embeds?.length);
-        const has_presale_link = PRESALE_KEYWORDS.some(k => text.toLowerCase().includes(k));
-        const reactions_received = msg.reactions?.reduce((sum, r) => sum + (r.count || 0), 0) || 0;
-        const is_thread_start = msg.thread != null;
+        const hasMedia = (message.attachments?.length > 0) || (message.embeds?.length > 0);
+        const isThread = !!message.thread;
+        const reactionsReceived = message.reactions?.reduce((s, r) => s + (r.count || 0), 0) || 0;
 
-        // Get XProfile for tier
-        const xProfiles = await base44.asServiceRole.entities.XProfile.filter({ user_email: profile.user_email });
-        const followers = xProfiles[0]?.followers_count || profile.followers_count || 0;
-        const tier = getAccountTier(followers);
-        const tier_multiplier = getTierMultiplier(tier);
+        const tier = getAccountTier(profile.followers_count || 0);
+        const tierMultiplier = getTierMultiplier(tier);
+        const { base, bonus, total } = calculateDiscordPoints({ hasMedia, isThread, reactionsReceived, repliesReceived: 0, tierMultiplier });
 
-        const action_type = is_thread_start ? 'thread' : 'message';
-        const { base, bonus, total } = calculateDiscordPoints({
-          action_type,
-          has_media,
-          reactions_received,
-          replies_received: 0,
-          tier_multiplier,
-        });
+        const trackedTag = TRACKED_TAGS.find(t => lowerText.includes(t)) || "thrft";
 
         await base44.asServiceRole.entities.SocialActivity.create({
           user_email: profile.user_email,
-          platform: 'discord',
+          platform: "discord",
           platform_handle: profile.platform_handle,
-          action_type,
-          tracked_tag: TRACKED_TAGS.find(t => text.toLowerCase().includes(t.toLowerCase())) || '#THRFT',
-          content_id: msg.id,
+          action_type: "message",
+          tracked_tag: trackedTag,
+          content_id: message.id,
           content_text: text.substring(0, 500),
-          has_media,
-          has_presale_link,
-          likes_received: reactions_received,
+          has_media: hasMedia,
+          has_presale_link: PRESALE_KEYWORDS.some(k => lowerText.includes(k)),
+          likes_received: reactionsReceived,
           base_points: base,
           bonus_points: bonus,
           points_earned: total,
-          activity_date: msg.timestamp,
+          activity_date: message.timestamp,
         });
 
-        await base44.asServiceRole.entities.SocialProfile.update(profile.id, {
-          total_points: (profile.total_points || 0) + total,
-          post_count: (profile.post_count || 0) + 1,
-          account_tier: tier,
-          multiplier: tier_multiplier,
-        });
-
-        existingIds.add(msg.id);
+        existingIds.add(message.id);
         totalCreated++;
+
+        if (!profileUpdates[profile.id]) {
+          profileUpdates[profile.id] = { profile, points: 0, post_count: 0 };
+        }
+        profileUpdates[profile.id].points += total;
+        profileUpdates[profile.id].post_count += 1;
       }
     }
 
-    return Response.json({ success: true, platform: 'discord', activities_created: totalCreated });
+    for (const [profileId, upd] of Object.entries(profileUpdates)) {
+      await base44.asServiceRole.entities.SocialProfile.update(profileId, {
+        total_points: (upd.profile.total_points || 0) + upd.points,
+        post_count: (upd.profile.post_count || 0) + upd.post_count,
+        is_connected: true,
+      });
+    }
+
+    return Response.json({ success: true, activities_created: totalCreated, profiles_updated: Object.keys(profileUpdates).length });
   } catch (error) {
-    console.error('Discord sync error:', error.message);
+    console.error("Discord sync error:", error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

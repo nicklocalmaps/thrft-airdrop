@@ -1,50 +1,47 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
-const BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
-const GROUP_ID = Deno.env.get("TELEGRAM_GROUP_ID");
-const TRACKED_TAGS = ["THRFT", "THRFTapp", "THRFTairdrop", "thrft.app"];
+const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
+const TELEGRAM_GROUP_ID = Deno.env.get("TELEGRAM_GROUP_ID");
+const TRACKED_TAGS = ["thrft", "thrftapp", "thrftairdrop", "@thrftapp"];
 const PRESALE_KEYWORDS = ["presale", "thrft.app", "thrft.io"];
 
-function getAccountTier(followers) {
-  if (followers >= 250000) return 4;
-  if (followers >= 50000) return 3;
-  if (followers >= 10000) return 2;
+function getAccountTier(members) {
+  if (members >= 250000) return 4;
+  if (members >= 50000) return 3;
+  if (members >= 10000) return 2;
   return 1;
 }
 function getTierMultiplier(tier) {
   return { 1: 1.0, 2: 1.75, 3: 2.5, 4: 3.5 }[tier] || 1.0;
 }
+function getImpressionBonus(views) {
+  if (views >= 1000000) return 1000;
+  if (views >= 100000) return 250;
+  if (views >= 50000) return 100;
+  if (views >= 10000) return 25;
+  if (views >= 1000) return 5;
+  return 0;
+}
 
-function calculateTelegramPoints({ action_type, has_media, has_presale_link, reactions_received, replies_received, view_count, tier_multiplier }) {
-  let base = 0, bonus = 0;
-
-  if (action_type === 'message') {
-    base = has_media ? 2 : 1;
-    if (has_presale_link) base = Math.max(base, 3);
-  } else if (action_type === 'invite') {
-    base = 5;
-  } else if (action_type === 'active_invite') {
-    base = 10;
-  } else if (action_type === 'share_external') {
-    base = 3;
-  }
-
-  bonus += (reactions_received || 0) * 0.5;
-  bonus += (replies_received || 0) * 1;
-  if ((view_count || 0) >= 100) bonus += 20; // viral message bonus
-
-  const total = (base + bonus) * (tier_multiplier || 1);
+function calculateTelegramPoints({ hasMedia, hasPresaleLink, reactionsReceived, repliesReceived, views, tierMultiplier }) {
+  let base = hasPresaleLink ? 3 : hasMedia ? 2 : 1;
+  let bonus = 0;
+  bonus += (reactionsReceived || 0) * 0.5;
+  bonus += (repliesReceived || 0) * 1;
+  bonus += getImpressionBonus(views || 0);
+  if ((views || 0) >= 100 || (reactionsReceived || 0) >= 100) bonus += 20;
+  const mediaMultiplier = hasMedia ? 1.5 : 1.0;
+  const total = (base + bonus) * tierMultiplier * mediaMultiplier;
   return { base, bonus, total: Math.round(total * 100) / 100 };
 }
 
-async function telegramApi(method, params = {}) {
-  const url = `https://api.telegram.org/bot${BOT_TOKEN}/${method}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+async function tgRequest(method, params = {}) {
+  const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
   });
-  if (!res.ok) throw new Error(`Telegram API error (${method}): ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`Telegram API error (${res.status}): ${await res.text()}`);
   return res.json();
 }
 
@@ -52,104 +49,109 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (user?.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
-
-    if (!BOT_TOKEN || !GROUP_ID) {
-      return Response.json({ error: 'TELEGRAM_BOT_TOKEN and TELEGRAM_GROUP_ID secrets are required.' }, { status: 400 });
+    if (user?.role !== 'admin') {
+      return Response.json({ error: 'Admin access required' }, { status: 403 });
+    }
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_GROUP_ID) {
+      return Response.json({ error: 'TELEGRAM_BOT_TOKEN and TELEGRAM_GROUP_ID secrets required' }, { status: 400 });
     }
 
-    // Load registered Telegram profiles
-    const socialProfiles = await base44.asServiceRole.entities.SocialProfile.filter({ platform: 'telegram' });
-    if (socialProfiles.length === 0) return Response.json({ message: 'No Telegram profiles registered.' });
-
+    const socialProfiles = await base44.asServiceRole.entities.SocialProfile.filter({ platform: "telegram" });
     const profilesByHandle = {};
     socialProfiles.forEach(p => {
-      const key = p.platform_handle?.replace('@', '').toLowerCase();
-      if (key) profilesByHandle[key] = p;
+      if (p.platform_handle) profilesByHandle[p.platform_handle.toLowerCase().replace("@", "")] = p;
     });
 
-    // Get recent messages from the group (last 100)
-    const updatesData = await telegramApi('getUpdates', { limit: 100, offset: -100 });
-    const updates = updatesData.result || [];
+    const existingActivities = await base44.asServiceRole.entities.SocialActivity.filter({ platform: "telegram" });
+    const existingIds = new Set(existingActivities.map(a => a.content_id).filter(Boolean));
 
-    const existing = await base44.asServiceRole.entities.SocialActivity.filter({ platform: 'telegram' });
-    const existingIds = new Set(existing.map(a => a.content_id).filter(Boolean));
+    const updatesData = await tgRequest("getUpdates", { limit: 100, allowed_updates: ["message", "channel_post"] });
+    if (!updatesData.ok) {
+      return Response.json({ error: "Failed to fetch Telegram updates" }, { status: 500 });
+    }
+
+    let chatMemberCount = 0;
+    try {
+      const chatData = await tgRequest("getChatMemberCount", { chat_id: TELEGRAM_GROUP_ID });
+      chatMemberCount = chatData.result || 0;
+    } catch (e) {
+      console.warn("Could not fetch member count:", e.message);
+    }
 
     let totalCreated = 0;
+    const profileUpdates = {};
 
-    for (const update of updates) {
-      const msg = update.message || update.channel_post;
-      if (!msg) continue;
+    for (const update of (updatesData.result || [])) {
+      const message = update.message || update.channel_post;
+      if (!message) continue;
 
-      const chatId = String(msg.chat?.id || '');
-      if (chatId !== String(GROUP_ID) && chatId !== GROUP_ID) continue;
+      if (String(message.chat?.id) !== String(TELEGRAM_GROUP_ID)) continue;
 
-      const msgId = String(msg.message_id);
-      if (existingIds.has(msgId)) continue;
+      const messageId = String(message.message_id);
+      if (existingIds.has(messageId)) continue;
 
-      const text = msg.text || msg.caption || '';
-      const hasThrftTag = TRACKED_TAGS.some(t => text.toLowerCase().includes(t.toLowerCase()));
-      if (!hasThrftTag) continue;
+      const text = message.text || message.caption || "";
+      const lowerText = text.toLowerCase();
+      if (!TRACKED_TAGS.some(t => lowerText.includes(t))) continue;
 
-      const username = msg.from?.username?.toLowerCase();
+      const username = message.from?.username?.toLowerCase();
       if (!username) continue;
 
       const profile = profilesByHandle[username];
       if (!profile) continue;
 
-      const has_media = !!(msg.photo || msg.video || msg.animation || msg.document);
-      const has_presale_link = PRESALE_KEYWORDS.some(k => text.toLowerCase().includes(k));
-      const reactions_received = msg.reactions?.reduce((sum, r) => sum + (r.count || 0), 0) || 0;
-      const view_count = msg.views || 0;
+      const hasMedia = !!(message.photo || message.video || message.animation || message.document);
+      const hasPresaleLink = PRESALE_KEYWORDS.some(k => lowerText.includes(k));
+      const views = message.views || 0;
+      const reactionsReceived = message.reactions?.results?.reduce((s, r) => s + (r.count || 0), 0) || 0;
+      const repliesReceived = message.replies?.replies || 0;
 
-      // Get XProfile for tier
-      const xProfiles = await base44.asServiceRole.entities.XProfile.filter({ user_email: profile.user_email });
-      const followers = xProfiles[0]?.followers_count || profile.followers_count || 0;
-      const tier = getAccountTier(followers);
-      const tier_multiplier = getTierMultiplier(tier);
+      const tier = getAccountTier(chatMemberCount);
+      const tierMultiplier = getTierMultiplier(tier);
+      const { base, bonus, total } = calculateTelegramPoints({ hasMedia, hasPresaleLink, reactionsReceived, repliesReceived, views, tierMultiplier });
 
-      const { base, bonus, total } = calculateTelegramPoints({
-        action_type: 'message',
-        has_media,
-        has_presale_link,
-        reactions_received,
-        replies_received: msg.reply_to_message ? 0 : 0,
-        view_count,
-        tier_multiplier,
-      });
+      const trackedTag = TRACKED_TAGS.find(t => lowerText.includes(t)) || "thrft";
 
       await base44.asServiceRole.entities.SocialActivity.create({
         user_email: profile.user_email,
-        platform: 'telegram',
+        platform: "telegram",
         platform_handle: profile.platform_handle,
-        action_type: 'message',
-        tracked_tag: TRACKED_TAGS.find(t => text.toLowerCase().includes(t.toLowerCase())) || '#THRFT',
-        content_id: msgId,
+        action_type: "message",
+        tracked_tag: trackedTag,
+        content_id: messageId,
         content_text: text.substring(0, 500),
-        has_media,
-        has_presale_link,
-        view_count,
-        likes_received: reactions_received,
+        has_media: hasMedia,
+        has_presale_link: hasPresaleLink,
+        view_count: views,
+        likes_received: reactionsReceived,
+        comments_received: repliesReceived,
         base_points: base,
         bonus_points: bonus,
         points_earned: total,
-        activity_date: new Date(msg.date * 1000).toISOString(),
+        activity_date: new Date(message.date * 1000).toISOString(),
       });
 
-      await base44.asServiceRole.entities.SocialProfile.update(profile.id, {
-        total_points: (profile.total_points || 0) + total,
-        post_count: (profile.post_count || 0) + 1,
-        account_tier: tier,
-        multiplier: tier_multiplier,
-      });
-
-      existingIds.add(msgId);
+      existingIds.add(messageId);
       totalCreated++;
+
+      if (!profileUpdates[profile.id]) {
+        profileUpdates[profile.id] = { profile, points: 0, post_count: 0 };
+      }
+      profileUpdates[profile.id].points += total;
+      profileUpdates[profile.id].post_count += 1;
     }
 
-    return Response.json({ success: true, platform: 'telegram', activities_created: totalCreated });
+    for (const [profileId, upd] of Object.entries(profileUpdates)) {
+      await base44.asServiceRole.entities.SocialProfile.update(profileId, {
+        total_points: (upd.profile.total_points || 0) + upd.points,
+        post_count: (upd.profile.post_count || 0) + upd.post_count,
+        is_connected: true,
+      });
+    }
+
+    return Response.json({ success: true, activities_created: totalCreated, profiles_updated: Object.keys(profileUpdates).length });
   } catch (error) {
-    console.error('Telegram sync error:', error.message);
+    console.error("Telegram sync error:", error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
