@@ -12,6 +12,7 @@ import StatCard from "@/components/dashboard/StatCard";
 import ActivityHistoryList from "@/components/profile/ActivityHistoryList";
 import RankBadge from "@/components/profile/RankBadge";
 import AppDownloadClaim from "@/components/referral/AppDownloadClaim";
+import ReferralCard from "@/components/referral/ReferralCard";
 
 export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState(null);
@@ -181,6 +182,9 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Referral Program */}
+      {userEmail && <ReferralCard userEmail={userEmail} />}
 
       {/* App Download Bonus */}
       {userEmail && profile && (

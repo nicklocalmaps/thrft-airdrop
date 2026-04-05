@@ -1,0 +1,56 @@
+{
+  "name": "Referral",
+  "type": "object",
+  "properties": {
+    "referrer_email": {
+      "type": "string",
+      "description": "Email of the user who referred"
+    },
+    "referrer_x_handle": {
+      "type": "string",
+      "description": "X handle of the referrer"
+    },
+    "referred_email": {
+      "type": "string",
+      "description": "Email of the user who was referred"
+    },
+    "referred_x_handle": {
+      "type": "string",
+      "description": "X handle of the referred user"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "x",
+        "telegram",
+        "discord",
+        "youtube",
+        "tiktok"
+      ],
+      "description": "Platform where referral originated"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Whether the referred user has registered and been confirmed"
+    },
+    "points_awarded": {
+      "type": "number",
+      "default": 0,
+      "description": "Points awarded to the referrer"
+    },
+    "referral_code": {
+      "type": "string",
+      "description": "Unique referral code used"
+    }
+  },
+  "required": [
+    "referrer_email",
+    "platform"
+  ]
+}

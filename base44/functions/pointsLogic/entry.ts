@@ -24,14 +24,6 @@ export function getMediaMultiplier(media_type) {
   return 1.0;
 }
 
-// Velocity multiplier (actions per hour)
-export function getVelocityMultiplier(actions_per_hour) {
-  if (actions_per_hour >= 50) return 2.0;
-  if (actions_per_hour >= 25) return 1.5;
-  if (actions_per_hour >= 10) return 1.2;
-  return 1.0;
-}
-
 // Global impression bonus (all platforms)
 export function getImpressionBonus(impressions) {
   if (impressions >= 1000000) return 1000;
@@ -54,7 +46,6 @@ export function calculateXPoints({
   bookmarks_received = 0,
   replied_to_followers = 0,
   tier_multiplier = 1,
-  velocity_multiplier = 1,
 }) {
   const baseMap = { post: 2, thread: 2, repost: 1.5, quote_repost: 2, reply: 1, bookmark: 1.5 };
   let base = baseMap[action_type] || 0;
@@ -75,7 +66,7 @@ export function calculateXPoints({
 
   bonus += getImpressionBonus(impression_count);
 
-  const total = (base + bonus) * tier_multiplier * velocity_multiplier;
+  const total = (base + bonus) * tier_multiplier;
   return { base, bonus, total: Math.round(total * 100) / 100 };
 }
 
@@ -88,7 +79,6 @@ export function calculateTelegramPoints({
   replies_received = 0,
   view_count = 0,
   tier_multiplier = 1,
-  velocity_multiplier = 1,
 }) {
   let base = 0;
   let bonus = 0;
@@ -108,7 +98,7 @@ export function calculateTelegramPoints({
   bonus += replies_received * 1;
   if (view_count >= 100) bonus += 20; // viral message bonus
 
-  const total = (base + bonus) * tier_multiplier * velocity_multiplier;
+  const total = (base + bonus) * tier_multiplier;
   return { base, bonus, total: Math.round(total * 100) / 100 };
 }
 
@@ -120,7 +110,6 @@ export function calculateDiscordPoints({
   replies_received = 0,
   is_high_engagement_thread = false, // 25+ replies
   tier_multiplier = 1,
-  velocity_multiplier = 1,
 }) {
   let base = 0;
   let bonus = 0;
@@ -139,7 +128,7 @@ export function calculateDiscordPoints({
   bonus += replies_received * 1;
   if (is_high_engagement_thread) bonus += 25;
 
-  const total = (base + bonus) * tier_multiplier * velocity_multiplier;
+  const total = (base + bonus) * tier_multiplier;
   return { base, bonus, total: Math.round(total * 100) / 100 };
 }
 
@@ -150,7 +139,6 @@ export function calculateYouTubePoints({
   has_presale_link = false,
   view_count = 0,
   tier_multiplier = 1,
-  velocity_multiplier = 1,
 }) {
   let base = 0;
   let bonus = 0;
@@ -172,7 +160,7 @@ export function calculateYouTubePoints({
   else if (view_count >= 5000) bonus += 75;
   else if (view_count >= 1000) bonus += 20;
 
-  const total = (base + bonus) * tier_multiplier * velocity_multiplier;
+  const total = (base + bonus) * tier_multiplier;
   return { base, bonus, total: Math.round(total * 100) / 100 };
 }
 
@@ -183,7 +171,6 @@ export function calculateTikTokPoints({
   has_presale_link = false,
   view_count = 0,
   tier_multiplier = 1,
-  velocity_multiplier = 1,
 }) {
   let base = 0;
   let bonus = 0;
@@ -203,6 +190,6 @@ export function calculateTikTokPoints({
   else if (view_count >= 10000) bonus += 50;
   else if (view_count >= 1000) bonus += 10;
 
-  const total = (base + bonus) * tier_multiplier * velocity_multiplier;
+  const total = (base + bonus) * tier_multiplier * 2.0;
   return { base, bonus, total: Math.round(total * 100) / 100 };
 }

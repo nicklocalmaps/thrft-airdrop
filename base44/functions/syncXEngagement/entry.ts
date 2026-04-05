@@ -146,9 +146,8 @@ Deno.serve(async (req) => {
           const followers = profile?.followers_count || 0;
           const tier = followers >= 250000 ? 4 : followers >= 50000 ? 3 : followers >= 10000 ? 2 : 1;
           const tierMultiplier = { 1: 1.0, 2: 1.75, 3: 2.5, 4: 3.5 }[tier] || 1.0;
-          const velocityMultiplier = profile?.velocity_multiplier || 1;
           const base = basePointMap[action_type] || 0;
-          const earnedPoints = Math.round(base * tierMultiplier * velocityMultiplier * 100) / 100;
+          const earnedPoints = Math.round(base * tierMultiplier * 100) / 100;
 
           // Create activity record
           await base44.asServiceRole.entities.Activity.create({
