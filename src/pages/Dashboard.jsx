@@ -16,7 +16,7 @@ export default function Dashboard() {
     base44.auth.me().then((u) => setUserEmail(u.email));
   }, []);
 
-  const { data: profiles, refetch: refetchProfiles } = useQuery({
+  const { data: profiles, refetch: refetchProfiles, isSuccess: profilesLoaded } = useQuery({
     queryKey: ["xprofile", userEmail],
     queryFn: () => base44.entities.XProfile.filter({ user_email: userEmail }),
     enabled: !!userEmail,
@@ -26,10 +26,11 @@ export default function Dashboard() {
   const profile = profiles?.[0] || null;
 
   useEffect(() => {
-    if (profiles && (profiles.length === 0 || !profiles[0]?.onboarding_complete)) {
+    if (!userEmail || !profilesLoaded) return;
+    if (profiles.length === 0 || !profiles[0]?.onboarding_complete) {
       setShowOnboarding(true);
     }
-  }, [profiles]);
+  }, [profiles, profilesLoaded, userEmail]);
 
   const { data: activities } = useQuery({
     queryKey: ["activities", userEmail],
