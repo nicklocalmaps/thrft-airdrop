@@ -206,10 +206,3 @@ export function calculateTikTokPoints({
   const total = (base + bonus) * tier_multiplier * velocity_multiplier;
   return { base, bonus, total: Math.round(total * 100) / 100 };
 }
-
-// ---- Cross-platform synergy bonus ----
-export function getCrossPlatformBonus(platformCount) {
-  if (platformCount >= 5) return 25;
-  if (platformCount >= 3) return 10;
-  return 0;
-}
