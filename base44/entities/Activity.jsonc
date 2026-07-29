@@ -1,0 +1,105 @@
+{
+  "name": "Activity",
+  "type": "object",
+  "properties": {
+    "x_handle": {
+      "type": "string",
+      "description": "The X.com handle of the user who performed the action"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "The email of the registered user"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "post",
+        "repost",
+        "quote_repost",
+        "reply",
+        "bookmark",
+        "thread"
+      ],
+      "description": "Type of engagement"
+    },
+    "tracked_tag": {
+      "type": "string",
+      "description": "The hashtag or mention this activity relates to"
+    },
+    "tweet_id": {
+      "type": "string",
+      "description": "The X.com tweet/post ID"
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "The conversation/thread ID for network effect tracking"
+    },
+    "tweet_text": {
+      "type": "string",
+      "description": "Text content of the tweet"
+    },
+    "has_media": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the post includes an image or video (+2 bonus)"
+    },
+    "has_presale_link": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the post includes the presale link (+2 bonus)"
+    },
+    "impression_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of views/impressions on the post (manual for now)"
+    },
+    "replies_received": {
+      "type": "number",
+      "default": 0,
+      "description": "Replies received on this post (1 pt each)"
+    },
+    "reposts_received": {
+      "type": "number",
+      "default": 0,
+      "description": "Reposts received on this post (1.5 pts each)"
+    },
+    "bookmarks_received": {
+      "type": "number",
+      "default": 0,
+      "description": "Bookmarks received on this post (1.5 pts each)"
+    },
+    "replied_to_handle": {
+      "type": "string",
+      "description": "Handle of account this reply was directed at (for bonus calculation)"
+    },
+    "replied_to_followers": {
+      "type": "number",
+      "default": 0,
+      "description": "Follower count of the account replied to (for bonus points)"
+    },
+    "base_points": {
+      "type": "number",
+      "description": "Base points before multiplier"
+    },
+    "bonus_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Bonus points (media, presale link, impressions, network, etc.)"
+    },
+    "points_earned": {
+      "type": "number",
+      "description": "Total points earned including bonuses and multiplier"
+    },
+    "activity_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the activity occurred on X.com"
+    }
+  },
+  "required": [
+    "x_handle",
+    "action_type",
+    "tracked_tag",
+    "points_earned"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "name": "AppDownloadClaim",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user submitting the claim"
+    },
+    "x_handle": {
+      "type": "string",
+      "description": "X handle of the claimant"
+    },
+    "screenshot_url": {
+      "type": "string",
+      "description": "URL of the uploaded screenshot proving app download"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Review status of the claim"
+    },
+    "admin_note": {
+      "type": "string",
+      "description": "Optional note from admin on rejection"
+    },
+    "points_awarded": {
+      "type": "number",
+      "default": 1000,
+      "description": "Points to be awarded upon approval"
+    }
+  },
+  "required": [
+    "user_email",
+    "x_handle",
+    "screenshot_url"
+  ]
+}

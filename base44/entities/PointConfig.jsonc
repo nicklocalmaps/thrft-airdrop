@@ -1,0 +1,27 @@
+{
+  "name": "PointConfig",
+  "type": "object",
+  "properties": {
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "post",
+        "repost",
+        "reply"
+      ],
+      "description": "The type of action"
+    },
+    "points": {
+      "type": "number",
+      "description": "Number of points awarded for this action"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of this point rule"
+    }
+  },
+  "required": [
+    "action_type",
+    "points"
+  ]
+}

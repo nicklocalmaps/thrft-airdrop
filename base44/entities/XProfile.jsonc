@@ -1,0 +1,110 @@
+{
+  "name": "XProfile",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "The email of the registered user"
+    },
+    "contact_email": {
+      "type": "string",
+      "description": "Optional contact email provided by the user during onboarding"
+    },
+    "x_handle": {
+      "type": "string",
+      "description": "The X.com username/handle"
+    },
+    "x_display_name": {
+      "type": "string",
+      "description": "Display name on X.com"
+    },
+    "x_avatar_url": {
+      "type": "string",
+      "description": "Profile picture URL from X.com"
+    },
+    "followers_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of followers on X.com"
+    },
+    "account_tier": {
+      "type": "number",
+      "default": 1,
+      "description": "Account tier: 1 (<10k), 2 (10k-50k), 3 (50k-250k), 4 (250k+)"
+    },
+    "total_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Total accumulated points"
+    },
+    "post_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of tracked posts"
+    },
+    "repost_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of tracked reposts"
+    },
+    "quote_repost_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of tracked quote reposts"
+    },
+    "reply_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of tracked replies"
+    },
+    "bookmark_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of tracked bookmarks"
+    },
+    "thread_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of tracked threads"
+    },
+    "multiplier": {
+      "type": "number",
+      "default": 1,
+      "description": "Current tier multiplier"
+    },
+    "velocity_multiplier": {
+      "type": "number",
+      "default": 1,
+      "description": "Velocity bonus multiplier (calculated weekly)"
+    },
+    "is_connected": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the X account is connected"
+    },
+    "onboarding_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user has completed onboarding"
+    },
+    "app_download_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the app download has been verified and 1000 pts awarded"
+    },
+    "last_points_email_total": {
+      "type": "number",
+      "default": 0,
+      "description": "Total points at last email notification"
+    },
+    "last_rank": {
+      "type": "number",
+      "default": 0,
+      "description": "Rank at last check for rank-change notifications"
+    }
+  },
+  "required": [
+    "user_email",
+    "x_handle"
+  ]
+}

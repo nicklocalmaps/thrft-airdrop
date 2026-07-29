@@ -1,0 +1,27 @@
+{
+  "name": "TrackedTag",
+  "type": "object",
+  "properties": {
+    "tag": {
+      "type": "string",
+      "description": "The hashtag or mention to track (e.g. #companyname or @companyname)"
+    },
+    "tag_type": {
+      "type": "string",
+      "enum": [
+        "hashtag",
+        "mention"
+      ],
+      "description": "Whether this is a hashtag or mention"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this tag is currently being tracked"
+    }
+  },
+  "required": [
+    "tag",
+    "tag_type"
+  ]
+}

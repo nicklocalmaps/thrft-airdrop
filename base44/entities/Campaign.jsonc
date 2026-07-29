@@ -1,0 +1,70 @@
+{
+  "name": "Campaign",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Campaign name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Campaign description"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "ended"
+      ],
+      "default": "draft",
+      "description": "Campaign status"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Campaign start date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Campaign end date"
+    },
+    "hashtags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Hashtags and mentions being tracked for this campaign"
+    },
+    "goal_actions": {
+      "type": "number",
+      "description": "Target number of total actions for the campaign"
+    },
+    "multiplier_threshold_100k": {
+      "type": "number",
+      "default": 4,
+      "description": "Multiplier for accounts with 100k+ followers"
+    },
+    "multiplier_threshold_50k": {
+      "type": "number",
+      "default": 3,
+      "description": "Multiplier for accounts with 50k+ followers"
+    },
+    "multiplier_threshold_25k": {
+      "type": "number",
+      "default": 2,
+      "description": "Multiplier for accounts with 25k+ followers"
+    },
+    "multiplier_high_activity": {
+      "type": "number",
+      "default": 1.5,
+      "description": "Multiplier for users with 2000+ actions over 45 days"
+    }
+  },
+  "required": [
+    "name",
+    "start_date",
+    "end_date"
+  ]
+}
